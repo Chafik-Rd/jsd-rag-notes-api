@@ -246,65 +246,65 @@ router.post("/search-notes", authUser, async (req, res) => {
 // });
 
 // Answer a question based on a user's notes, using vector search
-router.post("/answer-question/:userId", async (req, res) => {
-  const { userId } = req.params;
-  const { question } = req.body;
+// router.post("/answer-question/:userId", async (req, res) => {
+//   const { userId } = req.params;
+//   const { question } = req.body;
 
-  // … validation omitted for brevity …
+//   // … validation omitted for brevity …
 
-  // 1️⃣ Generate an embedding for the question
-  const questionEmbedding = await generateEmbedding(question);
+//   // 1️⃣ Generate an embedding for the question
+//   const questionEmbedding = await generateEmbedding(question);
 
-  // 2️⃣ Run vector-search against your notes collection
-  const topNotes = await Note.aggregate([
-    {
-      $vectorSearch: {
-        index: "vector_index", // your vector index name
-        queryVector: questionEmbedding,
-        path: "embedding", // where embeddings are stored
-        k: 5, // top 5 similar notes
-        numCandidates: 100,
-        limit: 5,
-        filter: { userId, isPublic: true },
-      },
-    },
-  ]);
+//   // 2️⃣ Run vector-search against your notes collection
+//   const topNotes = await Note.aggregate([
+//     {
+//       $vectorSearch: {
+//         index: "vector_index", // your vector index name
+//         queryVector: questionEmbedding,
+//         path: "embedding", // where embeddings are stored
+//         k: 5, // top 5 similar notes
+//         numCandidates: 100,
+//         limit: 5,
+//         filter: { userId, isPublic: true },
+//       },
+//     },
+//   ]);
 
-  if (!topNotes.length) {
-    return res
-      .status(404)
-      .json({ error: true, message: "No relevant notes found" });
-  }
+//   if (!topNotes.length) {
+//     return res
+//       .status(404)
+//       .json({ error: true, message: "No relevant notes found" });
+//   }
 
-  // 3️⃣ Build context from only those top hits
-  const context = topNotes
-    .map((n) => `Title: ${n.title}\nContent: ${n.content}`)
-    .join("\n\n");
+//   // 3️⃣ Build context from only those top hits
+//   const context = topNotes
+//     .map((n) => `Title: ${n.title}\nContent: ${n.content}`)
+//     .join("\n\n");
 
-  // 4️⃣ Ask OpenAI using just that filtered context
-  const prompt = `
-You are an AI assistant. Based on the notes below, answer the question.
-Notes:
-${context}
+//   // 4️⃣ Ask OpenAI using just that filtered context
+//   const prompt = `
+// You are an AI assistant. Based on the notes below, answer the question.
+// Notes:
+// ${context}
 
-Question: ${question}
-Answer:
-`;
+// Question: ${question}
+// Answer:
+// `;
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      { role: "system", content: "You are an AI assistant." },
-      { role: "user", content: prompt },
-    ],
-    max_tokens: 300,
-    temperature: 0.7,
-  });
+//   const response = await openai.chat.completions.create({
+//     model: "gpt-4o-mini",
+//     messages: [
+//       { role: "system", content: "You are an AI assistant." },
+//       { role: "user", content: prompt },
+//     ],
+//     max_tokens: 300,
+//     temperature: 0.7,
+//   });
 
-  res.json({
-    error: false,
-    answer: response.choices[0].message.content.trim(),
-  });
-});
+//   res.json({
+//     error: false,
+//     answer: response.choices[0].message.content.trim(),
+//   });
+// });
 
 export default router;
